@@ -63,8 +63,9 @@ use crate::{
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    config_ptr: *const Config,
+    config_ptr: jlong,
 ) -> *const Session {
+    let config_ptr = config_ptr as *const Config;
     let session = open_session(config_ptr);
     match session {
         Ok(session) => Arc::into_raw(Arc::new(session)),
@@ -194,8 +195,9 @@ fn open_session_with_yaml_config(env: &mut JNIEnv, yaml_config: JString) -> ZRes
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
+    session_ptr: jlong,
 ) {
+    let session_ptr = session_ptr as *const Session;
     Arc::from_raw(session_ptr);
 }
 
@@ -240,9 +242,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     // HistoryConfig
     history_config_enabled: jboolean,
     history_detect_late_publishers: jboolean,
@@ -258,6 +260,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
     callback: JObject,
     on_close: JObject,
 ) -> *const AdvancedSubscriber<()> {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let subscriber_ptr = || -> ZResult<*const AdvancedSubscriber<()>> {
         let mut builder = prepare_subscriber_builder(
@@ -365,9 +369,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     congestion_control: jint,
     priority: jint,
     is_express: jboolean,
@@ -386,6 +390,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
 
     publisher_detection: jboolean,
 ) -> *const AdvancedPublisher<'static> {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = OwnedObject::from_raw(session_ptr);
     let publisher_ptr = || -> ZResult<*const AdvancedPublisher<'static>> {
         let mut builder = prepare_publisher_builder(
@@ -491,14 +497,16 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     congestion_control: jint,
     priority: jint,
     is_express: jboolean,
     reliability: jint,
 ) -> *const Publisher<'static> {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let publisher_ptr = || -> ZResult<*const Publisher<'static>> {
         prepare_publisher_builder(
@@ -578,9 +586,9 @@ unsafe fn prepare_publisher_builder<'a, 'b>(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     payload: JByteArray,
     encoding_id: jint,
     encoding_schema: JString,
@@ -590,6 +598,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     attachment: JByteArray,
     reliability: jint,
 ) {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let _ = || -> ZResult<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
@@ -650,15 +660,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_deleteViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     congestion_control: jint,
     priority: jint,
     is_express: jboolean,
     attachment: JByteArray,
     reliability: jint,
 ) {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let _ = || -> ZResult<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
@@ -717,12 +729,14 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_deleteViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     callback: JObject,
     on_close: JObject,
 ) -> *const Subscriber<()> {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let subscriber_ptr = || -> ZResult<*const Subscriber<()>> {
         prepare_subscriber_builder(
@@ -788,9 +802,9 @@ unsafe fn prepare_subscriber_builder<'a, 'b>(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQuerierViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     target: jint,
     consolidation: jint,
     congestion_control: jint,
@@ -798,6 +812,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQuerierViaJNI(
     is_express: jboolean,
     timeout_ms: jlong,
 ) -> *const Querier<'static> {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     || -> ZResult<*const Querier<'static>> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
@@ -862,13 +878,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQuerierViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     callback: JObject,
     on_close: JObject,
     complete: jboolean,
 ) -> *const Queryable<()> {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let query_ptr = || -> ZResult<*const Queryable<()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);
@@ -1016,9 +1034,10 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> Z
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     key_expr_str: JString,
 ) -> *const KeyExpr<'static> {
+    let session_ptr = session_ptr as *const Session;
     let session: Arc<Session> = Arc::from_raw(session_ptr);
     let key_expr_ptr = || -> ZResult<*const KeyExpr<'static>> {
         let key_expr_str = decode_string(&mut env, &key_expr_str)?;
@@ -1067,9 +1086,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
-    key_expr_ptr: *const KeyExpr<'static>,
+    session_ptr: jlong,
+    key_expr_ptr: jlong,
 ) {
+    let session_ptr = session_ptr as *const Session;
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
     let session = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr_ptr);
     let key_expr_clone = key_expr.deref().clone();
@@ -1125,10 +1146,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
     selector_params: /*nullable*/ JString,
-    session_ptr: *const Session,
+    session_ptr: jlong,
     callback: JObject,
     on_close: JObject,
     timeout_ms: jlong,
@@ -1142,6 +1163,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     priority: jint,
     is_express: jboolean,
 ) {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let _ = || -> ZResult<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
@@ -1368,8 +1391,9 @@ pub(crate) fn on_reply_error(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getPeersZidViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
+    session_ptr: jlong,
 ) -> jobject {
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let ids = {
         let peers_zid = session.info().peers_zid().wait();
@@ -1391,8 +1415,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getPeersZidViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
+    session_ptr: jlong,
 ) -> jobject {
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let ids = {
         let peers_zid = session.info().routers_zid().wait();
@@ -1413,8 +1438,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getZidViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
+    session_ptr: jlong,
 ) -> jbyteArray {
+    let session_ptr = session_ptr as *const Session;
     let session = Arc::from_raw(session_ptr);
     let ids = {
         let zid = session.info().zid().wait();
